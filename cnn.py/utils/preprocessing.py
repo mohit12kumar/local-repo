@@ -6,27 +6,47 @@ import numpy as np
 # --------------------------------------------
 def preprocess_image(uploaded_file):
 
-    # Open uploaded file
-    image = Image.open(uploaded_file)
+    try:
 
-    # Convert to grayscale
-    image = image.convert("L")
+        # Open uploaded file
+        image = Image.open(uploaded_file)
 
-    # Resize image
-    image = image.resize((28, 28))
+        # Convert to grayscale
+        image = image.convert("L")
 
-    # Convert to numpy array
-    image_array = np.array(image)
+        # Resize image
+        image = image.resize((28, 28))
 
-    # Normalize
-    image_array = image_array / 255.0
+        # Convert to numpy array
+        image_array = np.array(image)
 
-    # Reshape for CNN
-    image_array = image_array.reshape(
-        1,
-        28,
-        28,
-        1
-    )
+        # Normalize
+        image_array = image_array / 255.0
 
-    return image_array
+        # Reshape for CNN
+        image_array = image_array.reshape(
+            1,
+            28,
+            28,
+            1
+        )
+
+        return image_array
+
+    except FileNotFoundError:
+
+        print("❌ File not found")
+
+        return None
+
+    except ValueError as e:
+
+        print(f"❌ Value Error: {e}")
+
+        return None
+
+    except Exception as e:
+
+        print(f"❌ Image Preprocessing Error: {e}")
+
+        return None

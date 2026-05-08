@@ -1,170 +1,114 @@
 # pages/prediction.py
 
 import streamlit as st
-import tensorflow as tf
-import numpy as np
 from PIL import Image
-import pandas as pd
+import requests
 
 # ============================================
-# LOAD MODEL
+# FASTAPI URL
 # ============================================
-model = tf.keras.models.load_model(
-    r"C:\Users\riyam\OneDrive\Desktop\New folder (5)\local-repo\cnn_model.keras"
-)
-
-# ============================================
-# CLASS NAMES
-# ============================================
-class_names = [
-    "0",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9"
-]
-
-# ============================================
-# IMAGE PREPROCESS FUNCTION
-# ============================================
-def preprocess_image(uploaded_file):
-
-    # Open image
-    image = Image.open(uploaded_file)
-
-    # Convert to grayscale
-    image = image.convert("L")
-
-    # Resize image
-    image = image.resize((28, 28))
-
-    # Convert image to numpy array
-    img_array = np.array(image)
-
-    # Normalize image
-    img_array = img_array / 255.0
-
-    # Reshape for CNN
-    img_array = img_array.reshape(
-        1,
-        28,
-        28,
-        1
-    )
-
-    return img_array
-
-# ============================================
-# SINGLE IMAGE PREDICTION
-# ============================================
-def predict_image(uploaded_file):
-
-    # Preprocess image
-    processed = preprocess_image(uploaded_file)
-
-    # Predict
-    prediction = model.predict(processed)
-
-    # Get class index
-    predicted_index = np.argmax(prediction)
-
-    # Confidence score
-    confidence = np.max(prediction) * 100
-
-    # Predicted class
-    predicted_class = class_names[predicted_index]
-
-    return predicted_class, confidence
+API_URL = "http://127.0.0.1:8000/predict"
 
 # ============================================
 # PREDICTION PAGE
 # ============================================
 def prediction_page():
 
-    st.title("📷 CNN Digit Prediction Dashboard")
+    st.title("📷 CNN Digit Prediction")
 
     st.write(
-        "Upload single or multiple digit images for prediction"
+        "Upload a handwritten digit image for prediction"
     )
+
+    st.markdown("---")
 
     # ============================================
     # FILE UPLOADER
     # ============================================
-    uploaded_files = st.file_uploader(
-        "Upload Images",
-        type=["jpg", "jpeg", "png"],
-        accept_multiple_files=True
+    uploaded_file = st.file_uploader(
+        "Upload Digit Image",
+        type=["jpg", "jpeg", "png"]
     )
 
     # ============================================
-    # IF FILES UPLOADED
+    # VALIDATION
     # ============================================
-    if uploaded_files:
+    if uploaded_file is not None:
 
-        results = []
+        try:
 
-        for uploaded_file in uploaded_files:
-
-            # Open image for display
+            # ============================================
+            # DISPLAY IMAGE
+            # ============================================
             image = Image.open(uploaded_file)
 
-            # Prediction
-            predicted_class, confidence = predict_image(
-                uploaded_file
+            st.image(
+                image,
+                caption="Uploaded Image",
+                width=250
             )
 
             st.markdown("---")
 
-            col1, col2 = st.columns([1, 2])
+            # ============================================
+            # PREDICT BUTTON
+            # ============================================
+            if st.button("🔍 Predict Digit"):
 
-            with col1:
+                # ============================================
+                # LOADING
+                # ============================================
+                with st.spinner(
+                    "Predicting digit..."
+                ):
 
-                st.image(
-                    image,
-                    caption=uploaded_file.name,
-                    width=200
-                )
+                    # ============================================
+                    # SEND IMAGE TO FASTAPI
+                    # ============================================
+                    uploaded_file.seek(0)
 
-            with col2:
+                    files = {
+                        "file": (
+                            uploaded_file.name,
+                            uploaded_file,
+                            uploaded_file.type
+                        )
+                    }
 
-                st.success(
-                    f"Predicted Digit: {predicted_class}"
-                )
+                    response = requests.post(
+                        API_URL,
+                        files=files
+                    )
 
-                st.info(
-                    f"Confidence: {confidence:.2f}%"
-                )
+                    # ============================================
+                    # CHECK RESPONSE
+                    # ============================================
+                    if response.status_code == 200:
 
-            # Store results
-            results.append({
-                "Image Name": uploaded_file.name,
-                "Prediction": predicted_class,
-                "Confidence": f"{confidence:.2f}%"
-            })
+                        result = response.json()
 
-        # ============================================
-        # RESULTS TABLE
-        # ============================================
-        st.markdown("---")
+                        st.success(
+                            f"✅ Predicted Digit: {result['prediction']}"
+                        )
 
-        st.subheader(
-            "📊 Batch Prediction Results"
-        )
+                        st.info(
+                            f"🎯 Confidence: {result['confidence']}%"
+                        )
 
-        df = pd.DataFrame(results)
+                    else:
 
-        st.dataframe(
-            df,
-            use_container_width=True
-        )
+                        st.error(
+                            f"❌ API Error: {response.text}"
+                        )
+
+        except Exception as e:
+
+            st.error(
+                f"❌ Error Processing Image: {e}"
+            )
 
     else:
 
         st.warning(
-            "⚠ Upload one or more images"
+            "⚠ Please upload an image"
         )
