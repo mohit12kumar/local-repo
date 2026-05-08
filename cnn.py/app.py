@@ -214,4 +214,4 @@ elif page == "ℹ️ About":
     - NumPy & Pillow
     """)
 
-    st.success("✅ App Running Successfully")
+    st.success("✅ App Running Successfully")   
