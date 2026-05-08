@@ -1,7 +1,0 @@
-hello mohit kumar this is a demo repo for learning git and github
-and this is a new line for testing purpose
-and this is a third line for testing purpose
-and this is a fourth line for testing purpose
-and this is a fifth line for testing purpose         
-and this is a sixth line for testing purpose       
-mohit work as trainee in digimantragit 
