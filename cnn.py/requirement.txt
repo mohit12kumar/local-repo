@@ -6,3 +6,4 @@ opencv-python
 matplotlib
 scikit-learn
 pandas
+streamlit-drawable-canvas
